@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/paulsonlegacy/go-env-loader"
+	"github.com/paulsonlegacy/go-social/internal/database"
+	"github.com/paulsonlegacy/go-social/internal/model"
 )
 
 // VARIABLES
@@ -34,17 +36,38 @@ func main() {
 		log.Fatal("Error loading .env file:", err)
 	}
 
-	configuration := config{
-		address: server_address,
+	DBURL, _ := envloader.GetEnv(envPath, "DBURL")
+
+	configurations := config{
+		server_address: server_address,
+		db: dbConfig{
+			dburl: DBURL,
+			maxOpenConnections: 30,
+			maxIdleConnections: 30,
+			maxIdleTime: "15mins",
+		},
 	}
 
+	db, err := db.New(
+		configurations.db.dburl,
+		configurations.db.maxOpenConnections,
+		configurations.db.maxIdleConnections,
+		configurations.db.maxIdleTime,
+	)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	model := model.NewModel(db)
+
 	app := &application{
-		config: configuration,
+		config: configurations,
+		model: model,
 	}
 
 	mux := app.mount()
 
-	log.Printf("Server has started at %s", app.config.address)
+	log.Printf("Server has started at %s", app.config.server_address)
 
 	log.Fatal(app.run(mux))
 }

@@ -1,4 +1,6 @@
 github.com/go-chi/chi/v5 v5.2.1 h1:KOIHODQj58PmL80G2Eak4WdvUzjSJSm0vG72crDCqb8=
 github.com/go-chi/chi/v5 v5.2.1/go.mod h1:L2yAIGWB3H+phAw1NxKwWM+7eUH/lU8pOMm5hHcoops=
+github.com/lib/pq v1.10.9 h1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4JEWq7dtCCRUEw=
+github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 github.com/paulsonlegacy/go-env-loader v0.1.0 h1:cL+dqBz+S1adohFiAl8izdLM8UCa1qdeJ9L+kWRHUA4=
 github.com/paulsonlegacy/go-env-loader v0.1.0/go.mod h1:SWs4onIoH9eghr9wtCJbqPrXS9KQhCk/pqGAm+op9Cs=

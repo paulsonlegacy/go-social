@@ -6,3 +6,5 @@ require (
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/paulsonlegacy/go-env-loader v0.1.0
 )
+
+require github.com/lib/pq v1.10.9

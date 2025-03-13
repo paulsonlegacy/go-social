@@ -9,3 +9,7 @@
 - Edit .air.toml file to suit project (directory structure)
 
 - Air Verse is initialized using the command - `air init` and boots project using - `air`
+
+- github.com/lib/pq is the driver for postgres and interfaces with the "database/sql"
+
+- "database/sql" 

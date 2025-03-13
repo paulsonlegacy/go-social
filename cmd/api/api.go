@@ -6,14 +6,28 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/paulsonlegacy/go-social/internal/model"
 )
 
 type application struct {
 	config config
+	model model.Models
 }
 
 type config struct {
-	address string
+	server_address string
+	db dbConfig
+}
+
+type dbConfig struct {
+	dbhost string
+	dbport int
+	dbuser string
+	dbpass string
+	dburl string
+	maxOpenConnections int
+	maxIdleConnections int
+	maxIdleTime string
 }
 
 func (app *application) homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +55,7 @@ func (app *application) run(mux *chi.Mux) error {
 	
 
 	server := &http.Server{
-		Addr: app.config.address,
+		Addr: app.config.server_address,
 		Handler: mux,
 		WriteTimeout: time.Second * 30,
 		ReadTimeout: time.Second * 10,
