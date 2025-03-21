@@ -5,15 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/paulsonlegacy/go-env-loader"
-	"github.com/paulsonlegacy/go-social/internal/database"
+	envloader "github.com/paulsonlegacy/go-env-loader"
+	"github.com/paulsonlegacy/go-social/internal/db"
 	"github.com/paulsonlegacy/go-social/internal/model"
 )
 
 // VARIABLES
 
 var BASE_PATH string
-
 
 // FUNCTIONS
 
@@ -24,7 +23,6 @@ func init() {
 	}
 	BASE_PATH = dir // Sets the root directory dynamically
 }
-
 
 // APPLICATION ENTRY POINT
 
@@ -41,10 +39,10 @@ func main() {
 	configurations := config{
 		server_address: server_address,
 		db: dbConfig{
-			dburl: DBURL,
+			dburl:              DBURL,
 			maxOpenConnections: 30,
 			maxIdleConnections: 30,
-			maxIdleTime: "15mins",
+			maxIdleTime:        "15mins",
 		},
 	}
 
@@ -62,7 +60,7 @@ func main() {
 
 	app := &application{
 		config: configurations,
-		model: model,
+		model:  model,
 	}
 
 	mux := app.mount()

@@ -12,4 +12,12 @@
 
 - github.com/lib/pq is the driver for postgres and interfaces with the "database/sql"
 
-- "database/sql" 
+- "database/sql" is an abstraction 
+
+- docker was used for installing and running postgres instances
+
+- migration engine used is golang-migrate and installed using: go get -u github.com/golang-migrate/migrate/v4
+
+- Create migration command: migrate create -seq -ext sql -dir ./internal/db/migrations create_users
+
+- Run migration command: migrate -database "DB_URL" ./internal/db/migrations migrations up
