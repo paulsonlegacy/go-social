@@ -3,10 +3,14 @@ package db
 import (
 	"context"
 	"database/sql"
+	"log"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql" // Import MySQL driver
 )
 
-func New(dburl string, maxOpenConns, maxIdleConns int, maxIdleTime string) (*sql.DB, error) {
+// NewDBConnection initializes a new DB connection pool
+func NewDBConnection(dburl string, maxOpenConns, maxIdleConns int, maxIdleTime string) (*sql.DB, error) {
 	// Converting maxIdleTime to time object
 	duration, err := time.ParseDuration(maxIdleTime)
 	if err != nil {
@@ -14,9 +18,11 @@ func New(dburl string, maxOpenConns, maxIdleConns int, maxIdleTime string) (*sql
 	}
 	
 	// Making a postgres DB connection
-	db, err := sql.Open("postres", dburl)
+	db, err := sql.Open("mysql", dburl)
 	if err != nil {
 		return nil, err
+	} else {
+		log.Println("DB connection successful!")
 	}
 
 	// Configuration DB

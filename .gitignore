@@ -1,3 +1,6 @@
+# Folders
 bin/
+
+# Files
 *.txt
-internal/env
+internal/config/*env

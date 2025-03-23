@@ -1,21 +1,22 @@
 version: '3.8'
 
 services:
-  # PostgreSQL service
-  postgres:
-    image: postgres:16.3
-    container_name: postgres-db
+  # MySQL service
+  mysql:
+    image: mysql:9.2
+    container_name: mysql-db
     restart: always
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_DB=go-social
+      - MYSQL_ROOT_PASSWORD=admin
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=admin
+      - MYSQL_DATABASE=go_social
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
     ports:
-      - "5432:5432"
+      - "3306:3306"
 
-# Volumes to persist PostgreSQL data
+# Volumes to persist MySQL data
 volumes:
-  postgres_data:
+  mysql_data:
     driver: local

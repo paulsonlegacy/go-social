@@ -1,6 +1,20 @@
 # Notes
 
-- The default mux from the net/http library i.e http.NewServeMux() does not support dynamic URLs and wildcards hence the need for some external mux/router library.
+- Ensure to add Go bin folder to PATH ($GOPATH/bin) for global installs and commands:
+
+```powershell 
+$env:Path += ";$(go env GOPATH)\bin"
+```
+
+To make this change persist across sessions:
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";$(go env GOPATH)\bin", [System.EnvironmentVariableTarget]::User)
+```
+
+This permanently adds $(go env GOPATH)\bin to the user's PATH.
+
+- The DEFAULT mux from the net/http library i.e http.NewServeMux() does not support dynamic URLs and wildcards hence the need for some external mux/router library.
 
 - Gorilla mux library is depreciated and go-chi is used for this project as a modern choice.
 
@@ -16,8 +30,21 @@
 
 - docker was used for installing and running postgres instances
 
-- migration engine used is golang-migrate and installed using: go get -u github.com/golang-migrate/migrate/v4
+- There are 2 migrations libraries preferred for Go backends - Goose and Golang-migrate
+
+- For Golang-migrate:
+
+- golang-migrate is installed using: go get -u github.com/golang-migrate/migrate/v4
 
 - Create migration command: migrate create -seq -ext sql -dir ./internal/db/migrations create_users
 
 - Run migration command: migrate -database "DB_URL" ./internal/db/migrations migrations up
+
+- For Goose (which is used for this project)
+
+- Create migration command: goose -dir internal/db/migrations create create_users_table sql
+
+- Run migration command: goose -dir internal/db/migrations mysql "root:@tcp(localhost:3306)/go_social" up
+
+- To undo the last migration: goose -dir internal/db/migrations mysql "root:@tcp(localhost:3306)/go_social" down
+
