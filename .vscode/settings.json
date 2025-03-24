@@ -2,5 +2,6 @@
     "go.useLanguageServer": true,
     "gopls": {
         "staticcheck": true
-    }
+    },
+    "makefile.configureOnOpen": false
 }
