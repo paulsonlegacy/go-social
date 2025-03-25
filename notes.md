@@ -48,3 +48,8 @@ This permanently adds $(go env GOPATH)\bin to the user's PATH.
 
 - To undo the last migration: goose -dir internal/db/migrations mysql "root:@tcp(localhost:3306)/go_social" down
 
+- To know migration status: goose -dir internal/db/migrations mysql "root:@tcp(localhost:3306)/go_social" status
+
+- Makefile is added to store easily run commands
+
+- Install make on Windows using chocolatey - choco install make

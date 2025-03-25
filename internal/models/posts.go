@@ -3,7 +3,9 @@ package models
 import (
 	"context"
 	"database/sql"
+	"log"
 	"strings"
+	"encoding/json"
 )
 
 // Post structure
@@ -34,13 +36,23 @@ func (postmodel PostModel) Create(ctx context.Context, post *Post) error {
 		VALUES (?, ?, ?, ?, NOW(), NOW())
 	`
 
+	log.Println("Before conversion:", *post)
+
+	// Convert `[]string` to JSON string
+	tagsJSON, err := json.Marshal(post.Tags)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Converted Tags JSON:", string(tagsJSON))
+
 	result, err := postmodel.db.ExecContext(
 		ctx,
 		query,
 		post.UserID,
 		post.Title,
 		post.Content,
-		strings.Join(post.Tags, ","), // Convert []string to comma-separated string
+		tagsJSON,
 	)
 
 	if err != nil {
