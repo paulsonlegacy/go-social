@@ -22,12 +22,21 @@ func SetUpRouter(app *app.Application) *chi.Mux {
 	r.Route("/api/v1", func(r chi.Router) {
 		// Using handler from handlers package
 		r.Get("/", handlers.HomeHandler)
-		r.Get("/posts", func(w http.ResponseWriter, r *http.Request) {
-			handlers.CreatePostHandler(w, r, app)
-		})
 		r.Post("/posts/create", func(w http.ResponseWriter, r *http.Request) {
 			handlers.CreatePostHandler(w, r, app)
 		})
+		// r.Get("/posts", func(w http.ResponseWriter, r *http.Request) {
+		// 	handlers.FetchPostsHandler(w, r, app)
+		// })
+		r.Get("/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
+			handlers.FetchPostHandler(w, r, app)
+		})
+		// r.Put("/posts/{id}/Update", func(w http.ResponseWriter, r *http.Request) {
+		// 	handlers.UpdatePostHandler(w, r, app)
+		// })
+		// r.Delete("/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
+		// 	handlers.DeletePostHandler(w, r, app)
+		// })
 	})
 
 	return r

@@ -6,8 +6,8 @@ import (
 	"net/http"
 )
 
-type envelope struct {
-	Message string `json:"message"` // The JSON response will have an "error" field.
+type JSONMessage struct {
+	Message string `json:"message"` // The JSON response will have an "message" field.
 }
 
 // FUNCTIONS
@@ -40,16 +40,10 @@ func ReadJSON(w http.ResponseWriter, r *http.Request, data any) error {
 	return decoder.Decode(data)  
 }
 
-// WriteJSONError sends a JSON response with an error message.
-func WriteJSONError(w http.ResponseWriter, status int, errorMessage string) error {
+// WriteJSONStatus sends a JSON response with a message.
+func WriteJSONStatus(w http.ResponseWriter, status int, message string) error {
 	// Call WriteJSON to send the error response with the given status code.
-	return WriteJSON(w, status, &envelope{Message: errorMessage})
-}
-
-// WriteJSONError sends a JSON response with an error message.
-func WriteJSONSuccess(w http.ResponseWriter, status int, successMessage string) error {
-	// Call WriteJSON to send the error response with the given status code.
-	return WriteJSON(w, status, &envelope{Message: successMessage})
+	return WriteJSON(w, status, &JSONMessage{Message: message})
 }
 
 // ConvertTags checks if the data slice contains a single string and splits it into multiple data if needed.

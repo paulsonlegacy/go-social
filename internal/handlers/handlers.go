@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"log"
+	"strconv"
 	"net/http"
-
 	"github.com/paulsonlegacy/go-social/internal/app"
 	"github.com/paulsonlegacy/go-social/internal/services"
 	"github.com/paulsonlegacy/go-social/internal/models"
+	"github.com/go-chi/chi/v5"
 )
 
 
@@ -31,7 +33,7 @@ func CreatePostHandler(responseW http.ResponseWriter, request *http.Request, app
     // Read and parse the JSON request body into the payload struct
     if err := services.ReadJSON(responseW, request, &payload); err != nil {
         // If there's an error, respond with a Bad Request error and return
-        services.WriteJSONError(responseW, http.StatusBadRequest, err.Error())
+        services.WriteJSONStatus(responseW, http.StatusBadRequest, err.Error())
         return
     }
 
@@ -49,11 +51,75 @@ func CreatePostHandler(responseW http.ResponseWriter, request *http.Request, app
         },
     ); err != nil {
         // If there's an error, respond with an Internal Server Error and return
-        services.WriteJSONError(responseW, http.StatusInternalServerError, err.Error())
+        services.WriteJSONStatus(responseW, http.StatusInternalServerError, err.Error())
         return
     } else {
         // If successful, respond with a success message
-        services.WriteJSONSuccess(responseW, http.StatusCreated, "Post successfully created")
+        services.WriteJSONStatus(responseW, http.StatusCreated, "Post successfully created")
         return
     }
 }
+
+func FetchPostsHandler(responseW http.ResponseWriter, request *http.Request, app *app.Application) {
+	// Get the request's context
+	ctx := request.Context()
+	
+	posts, err := app.Models.Posts.GetAll(ctx)
+
+	if err != nil {
+		services.WriteJSONStatus(responseW, http.StatusBadRequest, "Bad request")
+		return
+	} else if posts == nil {
+		services.WriteJSONStatus(responseW, http.StatusNotFound, "Resource not found")
+		return
+	} else {
+		services.WriteJSON(responseW, http.StatusOK, posts)
+		return
+	}
+}
+
+func FetchPostHandler(responseW http.ResponseWriter, request *http.Request, app *app.Application) {
+	// Extract the id as a string
+	idStr := chi.URLParam(request, "id")
+
+	// Convert id to int64
+	id, err := strconv.ParseInt(idStr, 10, 64)
+
+	if err != nil {
+		services.WriteJSONStatus(responseW, http.StatusBadRequest, "Invalid post ID")
+		return
+	}
+
+	// Get the request's context
+	ctx := request.Context()
+
+	// Query DB through post model method
+	data, err := app.Models.Posts.GetByID(ctx, id);
+
+	// Logging data
+	log.Println(data)
+
+    if data == nil {
+		services.WriteJSONStatus(responseW, http.StatusNotFound, "Resource not found")
+		return
+	} else if err != nil {
+		services.WriteJSONStatus(responseW, http.StatusBadRequest, "Bad request")
+		return
+	} else {
+		services.WriteJSON(responseW, http.StatusFound, data)
+		return
+	}
+	
+}
+
+// func UpdatePostHandler(responseW http.ResponseWriter, request *http.Request, app *app.Application) {
+// 	id := chi.URLParam(request, "id") // Extract 'id' from the URL
+//     log.Println(responseW, "Updating post with ID: %s", id)
+// 	return
+// }
+
+// func DeletePostHandler(responseW http.ResponseWriter, request *http.Request, app *app.Application) {
+// 	id := chi.URLParam(request, "id") // Extract 'id' from the URL
+//     log.Println(responseW, "Updating post with ID: %s", id)
+// 	return
+// }

@@ -1,1 +1,2 @@
 - difference between any and interface{}
+- tautological condition: non-nil != nil nilness (cond)
