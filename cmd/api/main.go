@@ -3,14 +3,13 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 	"path/filepath"
-	"net/http"
+	
 	envloader "github.com/paulsonlegacy/go-env-loader"
+	"github.com/paulsonlegacy/go-social/internal/app"
 	"github.com/paulsonlegacy/go-social/internal/db"
 	"github.com/paulsonlegacy/go-social/internal/models"
 	"github.com/paulsonlegacy/go-social/internal/routes"
-	"github.com/go-chi/chi/v5"
 )
 
 
@@ -21,40 +20,6 @@ var (
 	ENV_PATH string
 	SERVER_ADDRESS string
 ) 
-
-
-// STRUCTURES
-
-type Config struct {
-	ServerAddress string
-	DB struct {
-		DBURL string
-		MaxOpenConns int
-		MaxIdleConns int
-		MaxIdleTime string
-	}
-}
-
-type Application struct {
-	Config Config
-	Models models.Models
-}
-
-func (app *Application) run(router *chi.Mux) error {
-	
-	// Declaring server parameters
-	server := &http.Server{
-		Addr: app.Config.ServerAddress,
-		Handler: router,
-		WriteTimeout: time.Second * 30,
-		ReadTimeout: time.Second * 10,
-		IdleTimeout: time.Minute,
-	}
-
-	log.Printf("Server has started at %s", app.Config.ServerAddress)
-
-	return server.ListenAndServe()
-}
 
 
 // FUNCTIONS
@@ -92,7 +57,7 @@ func main() {
 	db_url, _ := envloader.GetEnv(ENV_PATH, "DBURL")
 	
 	// Types
-	configurations := Config{
+	configurations := app.Config{
 		ServerAddress: SERVER_ADDRESS,
 		DB: struct {
 			DBURL        string
@@ -120,14 +85,14 @@ func main() {
 	}
 
 	// Initializing App engine
-	app := &Application{
+	var app *app.Application = &app.Application{
 		Config: configurations,
 		Models:  models.NewModels(DB_CONNECTION),
 	}
 
 	// Initializing mux/router
-	appRouter := router.SetUpRouter()
+	appRouter := router.SetUpRouter(app)
 
 	// Running server
-	log.Fatal(app.run(appRouter))
+	log.Fatal(app.Run(appRouter))
 }
