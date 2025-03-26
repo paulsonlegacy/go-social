@@ -67,7 +67,7 @@ func FetchPostsHandler(responseW http.ResponseWriter, request *http.Request, app
 	posts, err := app.Models.Posts.GetAll(ctx)
 
 	if err != nil {
-		services.WriteJSONStatus(responseW, http.StatusBadRequest, "Bad request")
+		services.WriteJSONStatus(responseW, http.StatusBadRequest, err.Error())
 		return
 	} else if posts == nil {
 		services.WriteJSONStatus(responseW, http.StatusNotFound, "Resource not found")
@@ -118,8 +118,28 @@ func FetchPostHandler(responseW http.ResponseWriter, request *http.Request, app 
 // 	return
 // }
 
-// func DeletePostHandler(responseW http.ResponseWriter, request *http.Request, app *app.Application) {
-// 	id := chi.URLParam(request, "id") // Extract 'id' from the URL
-//     log.Println(responseW, "Updating post with ID: %s", id)
-// 	return
-// }
+func DeletePostHandler(responseW http.ResponseWriter, request *http.Request, app *app.Application) {
+	// Extract the id as a string
+	idStr := chi.URLParam(request, "id")
+
+	// Convert id to int64
+	id, err := strconv.ParseInt(idStr, 10, 64)
+
+	if err != nil {
+		services.WriteJSONStatus(responseW, http.StatusBadRequest, "Invalid post ID")
+		return
+	}
+
+	// Get the request's context
+	ctx := request.Context()
+
+	// Query DB through post model method
+	err = app.Models.Posts.Delete(ctx, id);
+
+	if err != nil {
+		services.WriteJSONStatus(responseW, http.StatusBadRequest, "Bad request")
+		return
+	}
+
+	services.WriteJSONStatus(responseW, http.StatusOK, "Post successfully deleted")
+}
