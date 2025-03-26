@@ -31,9 +31,9 @@ func SetUpRouter(app *app.Application) *chi.Mux {
 		r.Get("/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
 			handlers.FetchPostHandler(w, r, app)
 		})
-		// r.Put("/posts/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		// 	handlers.UpdatePostHandler(w, r, app)
-		// })
+		r.Patch("/posts/{id}/update", func(w http.ResponseWriter, r *http.Request) {
+			handlers.UpdatePostHandler(w, r, app)
+		})
 		r.Delete("/posts/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
 			handlers.DeletePostHandler(w, r, app)
 		})

@@ -12,6 +12,7 @@ import (
 
 
 type CreatePostPayload struct {
+	ID  int64   `json:"id"`
 	UserID  int64   `json:"user_id"`
 	Title string `json:"title"`
 	Content string `json:"content"`
@@ -112,11 +113,39 @@ func FetchPostHandler(responseW http.ResponseWriter, request *http.Request, app 
 	
 }
 
-// func UpdatePostHandler(responseW http.ResponseWriter, request *http.Request, app *app.Application) {
-// 	id := chi.URLParam(request, "id") // Extract 'id' from the URL
-//     log.Println(responseW, "Updating post with ID: %s", id)
-// 	return
-// }
+func UpdatePostHandler(responseW http.ResponseWriter, request *http.Request, app *app.Application) {
+	// Define a variable to store the incoming request payload
+	var payload CreatePostPayload
+
+	// Read and parse the JSON request body into the payload struct
+	if err := services.ReadJSON(responseW, request, &payload); err != nil {
+		// If there's an error, respond with a Bad Request error and return
+		services.WriteJSONStatus(responseW, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Get the request's context
+	ctx := request.Context()
+
+    // Attempt to update post in the database
+    if err := app.Models.Posts.Update(
+        ctx,
+        &models.Post{
+            Title:   payload.Title,   // Assign Title from payload
+            Content: payload.Content, // Assign Content from payload
+            Tags:    payload.Tags,    // Assign Tags from payload
+			ID: payload.ID, 			  // Assign ID from payload
+        },
+    ); err != nil {
+        // If there's an error, respond with an Internal Server Error and return
+        services.WriteJSONStatus(responseW, http.StatusInternalServerError, err.Error())
+        return
+    } else {
+        // If successful, respond with a success message
+        services.WriteJSONStatus(responseW, http.StatusCreated, "Post successfully updated")
+        return
+    }
+}
 
 func DeletePostHandler(responseW http.ResponseWriter, request *http.Request, app *app.Application) {
 	// Extract the id as a string
