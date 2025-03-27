@@ -3,10 +3,12 @@ package models
 import (
 	"context"
 	"database/sql"
-	"log"
-	"strings"
 	"encoding/json"
+	"log"
 )
+
+
+// TYPES
 
 // Post structure
 type Post struct {
@@ -24,10 +26,16 @@ type PostModel struct {
 	db *sql.DB
 }
 
+// FUNCTIONS
+
 // NewPostModel initiates a new PostModel
 func NewPostModel(db *sql.DB) PostModel {
 	return PostModel{db: db}
 }
+
+
+
+
 
 // Create inserts a new post into the database
 func (postmodel PostModel) Create(ctx context.Context, post *Post) error {
@@ -72,8 +80,12 @@ func (postmodel PostModel) Create(ctx context.Context, post *Post) error {
 	return nil
 }
 
+
+
+
+
 // GetAll retrieves all posts from the database.
-// It executes a SQL query to fetch post details, maps the result to a slice of Post structs, 
+// It executes a SQL query to fetch post details, maps the result to a slice of Post structs,
 // and returns the list of posts or an error if any occurs.
 //
 // Parameters:
@@ -83,7 +95,11 @@ func (postmodel PostModel) Create(ctx context.Context, post *Post) error {
 // - ([]Post): A slice of Post structs containing all retrieved posts.
 // - (error): An error if the database query or data processing fails.
 func (postmodel PostModel) GetAll(ctx context.Context) ([]Post, error) {
-	query := `SELECT id, user_id, title, content, tags, created_at, updated_at FROM posts`
+	query := `
+		SELECT 
+		id, user_id, title, content, tags, created_at, updated_at 
+		FROM posts
+	`
 	rows, err := postmodel.db.QueryContext(ctx, query)
 
 	// Return error if query execution fails
@@ -98,7 +114,7 @@ func (postmodel PostModel) GetAll(ctx context.Context) ([]Post, error) {
 
 	// Iterate over each row in the result set
 	for rows.Next() {
-		var post Post // For parsing each post result into
+		var post Post       // For parsing each post result into
 		var tagsJSON string // Holds JSON string representation of tags
 
 		// Scan row values into the Post struct fields
@@ -117,7 +133,7 @@ func (postmodel PostModel) GetAll(ctx context.Context) ([]Post, error) {
 			return nil, err
 		}
 
-		// Convert the JSON string of current post tags 
+		// Convert the JSON string of current post tags
 		// into a slice of strings then update post.Tags
 		err = json.Unmarshal([]byte(tagsJSON), &post.Tags)
 		if err != nil {
@@ -132,37 +148,60 @@ func (postmodel PostModel) GetAll(ctx context.Context) ([]Post, error) {
 	return posts, nil
 }
 
+
+
+
+
 // GetByID retrieves a post by its ID
 func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error) {
-	query := `SELECT id, user_id, title, content, tags, created_at, updated_at FROM posts WHERE id = ? LIMIT 1`
+	query := `
+		SELECT 
+		id, user_id, title, content, tags, created_at, updated_at FROM posts 
+		WHERE id = ? 
+		LIMIT 1
+	`
 	row := postmodel.db.QueryRowContext(ctx, query, id)
 
-
-	var post Post
-	var tags string
-	err := row.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &tags, &post.CreatedAt, &post.UpdatedAt)
+	var post Post       // For parsing post result into
+	var tagsJSON string // Holds JSON string representation of tags
 	
+	err := row.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &tagsJSON, &post.CreatedAt, &post.UpdatedAt)
+
 	if err == sql.ErrNoRows {
 
 		return nil, nil // Return nil instead of an error if no post is found
 
-	}else if err != nil {
+	} else if err != nil {
 
 		return nil, err // If error occured
 
 	}
 
-	// Trim spaces when splitting tags
-	post.Tags = strings.FieldsFunc(tags, func(r rune) bool {
-		return r == ',' || r == ' '
-	})
+	// Convert the JSON string of post tags
+	// into a slice of strings then update post.Tags
+	err = json.Unmarshal([]byte(tagsJSON), &post.Tags)
+	
+	if err != nil {
+
+		return nil, err
+
+	}
 
 	return &post, nil
 }
 
+
+
+
+
 // Update modifies an existing post
 func (postmodel PostModel) Update(ctx context.Context, post *Post) error {
-	query := `UPDATE posts SET title = ?, content = ?, tags = ?, updated_at = Now() WHERE id = ? LIMIT 1`
+	query := `
+		UPDATE posts 
+		SET title = ?, content = ?, tags = ?, updated_at = NOW() 
+		WHERE id = ? 
+		LIMIT 1
+	`
 
 	// Convert `[]string` to JSON string
 	tagsJSON, err := json.Marshal(post.Tags)
@@ -173,17 +212,27 @@ func (postmodel PostModel) Update(ctx context.Context, post *Post) error {
 	_, err = postmodel.db.ExecContext(
 		ctx,
 		query,
-		post.Title, 
-		post.Content, 
-		tagsJSON, 
+		post.Title,
+		post.Content,
+		tagsJSON,
 		post.ID,
 	)
+
 	return err
 }
 
+
+
+
+
 // Delete removes a post by its ID
 func (postmodel PostModel) Delete(ctx context.Context, id int64) error {
-	query := `DELETE FROM posts WHERE id = ? LIMIT 1`
+	query := `
+		DELETE FROM posts 
+		WHERE id = ? 
+		LIMIT 1
+	`
 	_, err := postmodel.db.ExecContext(ctx, query, id)
+
 	return err
 }

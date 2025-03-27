@@ -1,2 +1,3 @@
 - difference between any and interface{}
 - tautological condition: non-nil != nil nilness (cond)
+- cannot define new methods on non-local type app.Application
