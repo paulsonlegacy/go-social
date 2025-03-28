@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-
+	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/paulsonlegacy/go-social/internal/models"
 )
@@ -39,11 +39,7 @@ func (app *Application) CreatePostHandler(responseW http.ResponseWriter, request
 	// Read and parse the JSON request body into the payload struct
 	if err := app.ReadJSON(responseW, request, &payload); err != nil {
 
-		responseData := app.NewHTTPResponse(http.StatusBadRequest, err.Error())
-
-		app.WriteJSON(responseW, http.StatusBadRequest, responseData)
-
-		return
+		app.BadRequest(responseW, request, err)
 
 	}
 
@@ -62,11 +58,7 @@ func (app *Application) CreatePostHandler(responseW http.ResponseWriter, request
 	); err != nil {
 
 		// If there's an error, respond with an Internal Server Error and return
-		responseData := app.NewHTTPResponse(http.StatusInternalServerError, err.Error())
-
-		app.WriteJSON(responseW, http.StatusInternalServerError, responseData)
-
-		return
+		app.InternalServerError(responseW, request, err)
 
 	} else {
 
@@ -132,11 +124,7 @@ func (app *Application) FetchPostHandler(responseW http.ResponseWriter, request 
 
 	if err != nil {
 
-		responseData := app.NewHTTPResponse(http.StatusBadRequest, "Invalid post ID")
-
-		app.WriteJSON(responseW, http.StatusBadRequest, responseData)
-
-		return
+		app.BadRequest(responseW, request, err)
 
 	}
 
@@ -151,19 +139,11 @@ func (app *Application) FetchPostHandler(responseW http.ResponseWriter, request 
 
 	if data == nil {
 
-		responseData := app.NewHTTPResponse(http.StatusNotFound, "Resource not found")
-
-		app.WriteJSON(responseW, http.StatusNotFound, responseData)
-
-		return
+		app.NotFound(responseW, request, errors.New("post not found"))
 
 	} else if err != nil {
 
-		responseData := app.NewHTTPResponse(http.StatusBadRequest, "Bad request")
-
-		app.WriteJSON(responseW, http.StatusBadRequest, responseData)
-
-		return
+		app.InternalServerError(responseW, request, err)
 
 	} else {
 
@@ -192,11 +172,7 @@ func (app *Application) UpdatePostHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		responseData := app.NewHTTPResponse(http.StatusBadRequest, "Invalid post ID")
-
-		app.WriteJSON(responseW, http.StatusBadRequest, responseData)
-
-		return
+		app.BadRequest(responseW, request, err)
 
 	}
 
@@ -208,11 +184,7 @@ func (app *Application) UpdatePostHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		responseData := app.NewHTTPResponse(http.StatusNotFound, "Post not found")
-
-		app.WriteJSON(responseW, http.StatusNotFound, responseData)
-
-		return
+		app.NotFound(responseW, request, errors.New("post not found"))
 
 	}
 
@@ -222,11 +194,7 @@ func (app *Application) UpdatePostHandler(responseW http.ResponseWriter, request
 	// Read & parse JSON request body into payload
 	if err := app.ReadJSON(responseW, request, &payload); err != nil {
 
-		responseData := app.NewHTTPResponse(http.StatusBadRequest, "Bad request")
-
-		app.WriteJSON(responseW, http.StatusBadRequest, responseData)
-
-		return
+		app.InternalServerError(responseW, request, err)
 
 	}
 
@@ -251,11 +219,7 @@ func (app *Application) UpdatePostHandler(responseW http.ResponseWriter, request
 	// Attempt to update post in the database
 	if err := app.Models.Posts.Update(ctx, existingPost); err != nil {
 
-		responseData := app.NewHTTPResponse(http.StatusInternalServerError, err)
-
-		app.WriteJSON(responseW, http.StatusInternalServerError, responseData)
-
-		return
+		app.InternalServerError(responseW, request, err)
 
 	}
 
@@ -280,11 +244,7 @@ func (app *Application) DeletePostHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		responseData := app.NewHTTPResponse(http.StatusBadRequest, "Invalid post ID")
-
-		app.WriteJSON(responseW, http.StatusBadRequest, responseData)
-
-		return
+		app.NotFound(responseW, request, err)
 
 	}
 
@@ -296,11 +256,7 @@ func (app *Application) DeletePostHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		responseData := app.NewHTTPResponse(http.StatusInternalServerError, "Internal server error")
-
-		app.WriteJSON(responseW, http.StatusInternalServerError, responseData)
-
-		return
+		app.InternalServerError(responseW, request, err)
 
 	}
 
