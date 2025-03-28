@@ -22,7 +22,7 @@ func NewDBConnection(dburl string, maxOpenConns, maxIdleConns int, maxIdleTime s
 	if err != nil {
 		return nil, err
 	} else {
-		log.Println("DB connection successful!")
+		log.Println("Started DB connection pool")
 	}
 
 	// Configuration DB

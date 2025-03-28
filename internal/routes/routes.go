@@ -1,11 +1,9 @@
 package router
 
 import (
-	"net/http"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/paulsonlegacy/go-social/internal/app"
-	"github.com/paulsonlegacy/go-social/internal/handlers"
 )
 
 // Set up the router and connects handlers to routes.
@@ -21,22 +19,17 @@ func SetUpRouter(app *app.Application) *chi.Mux {
 	// Routes
 	r.Route("/api/v1", func(r chi.Router) {
 		// Using handler from handlers package
-		r.Get("/", handlers.HomeHandler)
-		r.Post("/posts/create", func(w http.ResponseWriter, r *http.Request) {
-			handlers.CreatePostHandler(w, r, app)
+		r.Get("/", app.HomeHandler)
+
+		r.Route("/posts", func (r chi.Router) {
+			r.Get("/", app.FetchPostsHandler)
+			r.Get("/{id}", app.FetchPostHandler)
+			r.Post("/create", app.CreatePostHandler)
+			r.Patch("/{id}/update", app.UpdatePostHandler)
+			r.Delete("/{id}/delete", app.DeletePostHandler)
 		})
-		r.Get("/posts", func(w http.ResponseWriter, r *http.Request) {
-			handlers.FetchPostsHandler(w, r, app)
-		})
-		r.Get("/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
-			handlers.FetchPostHandler(w, r, app)
-		})
-		r.Patch("/posts/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-			handlers.UpdatePostHandler(w, r, app)
-		})
-		r.Delete("/posts/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-			handlers.DeletePostHandler(w, r, app)
-		})
+
+
 	})
 
 	return r
