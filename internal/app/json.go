@@ -30,6 +30,11 @@ func (app *Application) NewHTTPResponse(status int, data any) HTTPResponse {
 			http.StatusForbidden,
 			http.StatusUnauthorized,
 			http.StatusNotFound,
+			http.StatusNotModified,
+			http.StatusConflict,
+			http.StatusGatewayTimeout,
+			http.StatusNotAcceptable,
+			http.StatusNotImplemented,
 			http.StatusRequestTimeout:
 
 			// If data is an error type, return an error response with the error message
@@ -61,7 +66,7 @@ func (app *Application) NewHTTPResponse(status int, data any) HTTPResponse {
 				Message: "Error occurred",
 			}
 
-		default:
+		default: // Handle success status codes as default
 
 			// If data is a string, return a success response with the message
 			if successMessage, ok := data.(string); ok {
