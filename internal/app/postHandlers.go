@@ -11,11 +11,18 @@ import (
 
 
 // TYPES
-type PostPayload struct {
-	UserID    int64    `json:"user_id"`
-	Title     string   `json:"title"`
-	Content   string   `json:"content"`
-	Tags      []string `json:"tags"`
+type CreatePostPayload struct {
+	UserID    int64    `json:"user_id" validate:"required"`
+	Title     string   `json:"title" validate:"required,min=10,max=200"`
+	Content   string   `json:"content" validate:"required,min=100,max=10000"`
+	Tags      []string `json:"tags" validate:"omitempty"`
+}
+
+type UpdatePostPayload struct {
+	UserID    int64    `json:"user_id" validate:"omitempty"`
+	Title     string   `json:"title" validate:"omitempty,min=10,max=200"`
+	Content   string   `json:"content" validate:"omitempty,min=100,max=10000"`
+	Tags      []string `json:"tags" validate:"omitempty"`
 }
 
 
@@ -34,12 +41,19 @@ func (app *Application) HomeHandler(responseW http.ResponseWriter, request *http
 func (app *Application) CreatePostHandler(responseW http.ResponseWriter, request *http.Request) {
 
 	// Define a variable to store the incoming request payload
-	var payload PostPayload
+	var payload CreatePostPayload
 
 	// Read and parse the JSON request body into the payload struct
 	if err := app.ReadJSON(responseW, request, &payload); err != nil {
 
-		app.StatusBadRequest(responseW, request, err)
+		app.StatusBadRequest(responseW, request, err); return
+
+	}
+
+	// Validating payload
+	if err := Validate.Struct(payload); err != nil {
+		
+		app.StatusBadRequest(responseW, request, err); return
 
 	}
 
@@ -58,16 +72,15 @@ func (app *Application) CreatePostHandler(responseW http.ResponseWriter, request
 	); err != nil {
 
 		// If there's an error, respond with an Internal Server Error and return
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
 
 	} else {
 
 		// If successful, respond with a success message
 		responseData := app.NewHTTPResponse(http.StatusCreated, "Post successfully created")
 
-		app.WriteJSON(responseW, http.StatusCreated, responseData)
+		app.WriteJSON(responseW, http.StatusCreated, responseData); return
 
-		return
 	}
 }
 
@@ -85,16 +98,16 @@ func (app *Application) FetchPostsHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
 
 
 	} else if posts == nil {
 
-		app.StatusNotFound(responseW, request, errors.New("resource not found"))
+		app.StatusNotFound(responseW, request, errors.New("resource not found")); return
 
 	} else {
 
-		app.StatusOK(responseW, request, posts)
+		app.StatusOK(responseW, request, posts); return
 
 	}
 }
@@ -114,7 +127,7 @@ func (app *Application) FetchPostHandler(responseW http.ResponseWriter, request 
 
 	if err != nil {
 
-		app.StatusBadRequest(responseW, request, err)
+		app.StatusBadRequest(responseW, request, err); return
 
 	}
 
@@ -129,15 +142,15 @@ func (app *Application) FetchPostHandler(responseW http.ResponseWriter, request 
 
 	if data == nil {
 
-		app.StatusNotFound(responseW, request, errors.New("post not found"))
+		app.StatusNotFound(responseW, request, errors.New("post not found")); return
 
 	} else if err != nil {
 
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
 
 	} else {
 
-		app.StatusFound(responseW, request, data)
+		app.StatusFound(responseW, request, data); return
 
 	}
 
@@ -158,7 +171,7 @@ func (app *Application) UpdatePostHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		app.StatusBadRequest(responseW, request, err)
+		app.StatusBadRequest(responseW, request, err); return
 
 	}
 
@@ -170,19 +183,26 @@ func (app *Application) UpdatePostHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		app.StatusNotFound(responseW, request, errors.New("post not found"))
+		app.StatusNotFound(responseW, request, errors.New("post not found")); return
 
 	}
 
-	log.Println("Existing post: ", existingPost)
+	log.Println("Existing post before update: ", existingPost)
 
 	// Define a variable to store the incoming request payload
-	var payload PostPayload
+	var payload UpdatePostPayload
 
 	// Read & parse JSON request body into payload
 	if err := app.ReadJSON(responseW, request, &payload); err != nil {
 
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
+
+	}
+
+	// Validating payload
+	if err := Validate.Struct(payload); err != nil {
+
+		app.StatusBadRequest(responseW, request, err); return
 
 	}
 
@@ -206,10 +226,12 @@ func (app *Application) UpdatePostHandler(responseW http.ResponseWriter, request
 		existingPost.Tags = payload.Tags
 	}
 
+	log.Println("Existing post after update: ", existingPost)
+
 	// Attempt to update post in the database
 	if err := app.Models.Posts.Update(ctx, existingPost); err != nil {
 
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
 
 	}
 
@@ -232,7 +254,7 @@ func (app *Application) DeletePostHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		app.StatusBadRequest(responseW, request, err)
+		app.StatusBadRequest(responseW, request, err); return
 
 	}
 
@@ -244,7 +266,7 @@ func (app *Application) DeletePostHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
 
 	}
 

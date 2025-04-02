@@ -6,7 +6,15 @@ import (
 	"net/http"
 	"github.com/paulsonlegacy/go-social/internal/models"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 )
+
+
+// VARIABLES
+var Validate = validator.New()
+
+
+// TYPES
 
 // App Engline
 type Application struct {
@@ -23,6 +31,9 @@ type Config struct {
 		MaxIdleTime string
 	}
 }
+
+
+// METHODS
 
 // Run method uses engine parameters to start a server
 func (app *Application) Run(router *chi.Mux) error {

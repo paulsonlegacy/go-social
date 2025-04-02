@@ -10,14 +10,25 @@ import (
 )
 
 
+// TYPES
 type CreateUserPayload struct {
-	FirstName string  `json:"first_name"`
-	LastName string  `json:"last_name"`
-	Email string      `json:"email"`
-	Username string   `json:"username"`
-	Password string   `json:"password"`
+	FirstName string  `json:"first_name" validate:"required,max=30"`
+	LastName string  `json:"last_name" validate:"required,max=30"`
+	Email string      `json:"email" validate:"required,email,max=100"`
+	Username string   `json:"username" validate:"required,max=30"`
+	Password string   `json:"password" validate:"required,min=8"`
 }
 
+type UpdateUserPayload struct {
+	FirstName string  `json:"first_name" validate:"omitempty,max=30"`
+	LastName string  `json:"last_name" validate:"omitempty,max=30"`
+	Email string      `json:"email" validate:"omitempty,email,max=100"`
+	Username string   `json:"username" validate:"omitempty,max=30"`
+	Password string   `json:"password" validate:"omitempty,min=8"`
+}
+
+
+// FUNCTIONS
 
 // CreateUserHandler handles the creation of a new user
 func (app *Application) CreateUserHandler(responseW http.ResponseWriter, request *http.Request) {
@@ -28,7 +39,14 @@ func (app *Application) CreateUserHandler(responseW http.ResponseWriter, request
 	// Read and parse the JSON request body into the payload struct
 	if err := app.ReadJSON(responseW, request, &payload); err != nil {
 
-		app.StatusBadRequest(responseW, request, err)
+		app.StatusBadRequest(responseW, request, err); return
+
+	}
+
+	// Validate payload
+	if err := Validate.Struct(payload); err != nil {
+
+		app.StatusBadRequest(responseW, request, err); return
 
 	}
 
@@ -48,16 +66,13 @@ func (app *Application) CreateUserHandler(responseW http.ResponseWriter, request
 	); err != nil {
 
 		// If there's an error, respond with an Internal Server Error and return
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
 
 	} else {
 
 		// If successful, respond with a success message
-		responseData := app.NewHTTPResponse(http.StatusCreated, "User successfully created")
+		app.StatusCreated(responseW, request, "User successfully created")
 
-		app.WriteJSON(responseW, http.StatusCreated, responseData)
-
-		return
 	}
 }
 
@@ -72,12 +87,12 @@ func (app *Application) FetchUsersHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
 
 
 	} else if users == nil {
 
-		app.StatusNotFound(responseW, request, errors.New("resource not found"))
+		app.StatusNotFound(responseW, request, errors.New("resource not found")); return
 
 	} else {
 
@@ -162,7 +177,7 @@ func (app *Application) UpdateUserHandler(responseW http.ResponseWriter, request
 	log.Println("Existing user: ", existingUser)
 
 	// Define a variable to store the incoming request payload
-	var payload CreateUserPayload
+	var payload UpdateUserPayload
 
 	// Read & parse JSON request body into payload
 	if err := app.ReadJSON(responseW, request, &payload); err != nil {
@@ -172,6 +187,13 @@ func (app *Application) UpdateUserHandler(responseW http.ResponseWriter, request
 	}
 
 	log.Println("Payload: ", payload)
+
+	// Validate payload
+	if err := Validate.Struct(payload); err != nil {
+
+		app.StatusBadRequest(responseW, request, err)
+
+	}
 
 	// Update only fields that are provided in the request
 

@@ -53,3 +53,7 @@ This permanently adds $(go env GOPATH)\bin to the user's PATH.
 - Makefile is added to store easily run commands
 
 - Install make on Windows using chocolatey - choco install make
+
+- Struct validation was done using "github.com/go-playground/validator/v10" library
+
+- install using go get github.com/go-playground/validator/v10
