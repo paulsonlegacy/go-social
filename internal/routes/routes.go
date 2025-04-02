@@ -29,6 +29,14 @@ func SetUpRouter(app *app.Application) *chi.Mux {
 			r.Delete("/{id}/delete", app.DeletePostHandler)
 		})
 
+		r.Route("/users", func (r chi.Router) {
+			r.Get("/", app.FetchUsersHandler)
+			r.Get("/{id}", app.FetchUserHandler)
+			r.Post("/create", app.CreateUserHandler)
+			r.Patch("/{id}/update", app.UpdateUserHandler)
+			r.Delete("/{id}/delete", app.DeleteUserHandler)
+		})
+
 
 	})
 

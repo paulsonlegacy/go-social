@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users(
     password VARCHAR(255) NOT NULL,
     is_admin TINYINT DEFAULT 0,
     is_active TINYINT DEFAULT 0,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     KEY email (email),
     KEY username (username),
