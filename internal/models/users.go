@@ -1,6 +1,7 @@
 package models
 
 import (
+	"time"
 	"context"
 	"database/sql"
 )
@@ -30,14 +31,16 @@ func NewUserModel(db *sql.DB) UserModel {
 }
 
 // Creates a new user
-func (usermodel UserModel) Create(ctx context.Context, user *User) error {
+func (usermodel UserModel) Create(ctx context.Context, user *User) (*User, error) {
+
+	now := time.Now().Format("2006-01-02 15:04:05") // MySQL DATETIME format
+
 	query := `
-		INSERT INTO users (first_name, last_name, username, email, password)
-		VALUES ($1, $2, $3, $4, $5) 
-		RETURNING id, joined_at
+		INSERT INTO users (first_name, last_name, username, email, password, joined_at)
+		VALUES (?, ?, ?, ?, ?, ?) 
 	`
 
-	err := usermodel.db.QueryRowContext(
+	result, err := usermodel.db.ExecContext(
 		ctx,
 		query,
 		user.FirstName,
@@ -45,15 +48,31 @@ func (usermodel UserModel) Create(ctx context.Context, user *User) error {
 		user.Username,
 		user.Email,
 		user.Password,
-	).Scan(
-		&user.ID,
-		&user.JoinedAt,
+		now,
 	)
 
 	if err != nil {
-		return err
+
+		return nil, err
+
 	}
-	return nil
+
+	// Retrieve the last inserted ID
+	user.ID, err = result.LastInsertId()
+
+	if err != nil {
+
+		return nil, err
+
+	}
+
+	// Setting defaults for safety
+	user.Password = ""
+	user.IsActive = true
+	user.JoinedAt = now
+
+	// Finally returning user and nil
+	return user, nil
 }
 
 
@@ -72,7 +91,7 @@ func (usermodel UserModel) Create(ctx context.Context, user *User) error {
 func (usermodel UserModel) GetAll(ctx context.Context) ([]User, error) {
 	query := `
 		SELECT 
-		first_name, last_name, username, email, joined_at
+		id, first_name, last_name, username, email, joined_at
 		FROM users
 	`
 	rows, err := usermodel.db.QueryContext(ctx, query)
@@ -93,6 +112,7 @@ func (usermodel UserModel) GetAll(ctx context.Context) ([]User, error) {
 
 		// Scan row values into the user struct fields
 		err := rows.Scan(
+			&user.ID,
 			&user.FirstName,
 			&user.LastName,
 			&user.Username,
@@ -121,7 +141,7 @@ func (usermodel UserModel) GetAll(ctx context.Context) ([]User, error) {
 func (usermodel UserModel) GetByID(ctx context.Context, id int64) (*User, error) {
 	query := `
 		SELECT 
-		first_name, last_name, username, email, joined_at 
+		id, first_name, last_name, username, email, joined_at 
 		FROM users 
 		WHERE id = ? 
 		LIMIT 1
@@ -131,6 +151,7 @@ func (usermodel UserModel) GetByID(ctx context.Context, id int64) (*User, error)
 	var user User       // For parsing user result into
 	
 	err := row.Scan(
+		&user.ID,
 		&user.FirstName, 
 		&user.LastName, 
 		&user.Username, 
@@ -156,10 +177,10 @@ func (usermodel UserModel) GetByID(ctx context.Context, id int64) (*User, error)
 
 
 // Update modifies an existing user
-func (usermodel UserModel) Update(ctx context.Context, user *User) error {
+func (usermodel UserModel) Update(ctx context.Context, user *User) (*User, error) {
 	query := `
 		UPDATE users 
-		SET first_name = ?, last_name = ?, username = ?, email = ?
+		SET first_name = ?, last_name = ?, username = ?, email = ?, password = ?
 		WHERE id = ? 
 		LIMIT 1
 	`
@@ -171,9 +192,11 @@ func (usermodel UserModel) Update(ctx context.Context, user *User) error {
 		user.LastName,
 		user.Username,
 		user.Email,
+		user.Password,
+		user.ID, 
 	)
 
-	return err
+	return user, err
 }
 
 

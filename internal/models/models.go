@@ -8,10 +8,10 @@ import (
 
 // Model interface defines common CRUD methods for all models
 type Model[ModelType any] interface {
-	Create(context.Context, *ModelType) error
+	Create(context.Context, *ModelType) (*ModelType, error)
 	GetAll(context.Context) ([]ModelType, error)
 	GetByID(context.Context, int64) (*ModelType, error)
-	Update(context.Context, *ModelType) error
+	Update(context.Context, *ModelType) (*ModelType, error)
 	Delete(context.Context, int64) error
 }
 

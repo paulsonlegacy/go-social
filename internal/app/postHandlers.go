@@ -13,15 +13,15 @@ import (
 // TYPES
 type CreatePostPayload struct {
 	UserID    int64    `json:"user_id" validate:"required"`
-	Title     string   `json:"title" validate:"required,min=10,max=200"`
-	Content   string   `json:"content" validate:"required,min=100,max=10000"`
+	Title     string   `json:"title" validate:"required,min=10"`
+	Content   string   `json:"content" validate:"required,min=10,max=10000"`
 	Tags      []string `json:"tags" validate:"omitempty"`
 }
 
 type UpdatePostPayload struct {
 	UserID    int64    `json:"user_id" validate:"omitempty"`
-	Title     string   `json:"title" validate:"omitempty,min=10,max=200"`
-	Content   string   `json:"content" validate:"omitempty,min=100,max=10000"`
+	Title     string   `json:"title" validate:"omitempty,min=10"`
+	Content   string   `json:"content" validate:"omitempty,min=10,max=10000"`
 	Tags      []string `json:"tags" validate:"omitempty"`
 }
 
@@ -61,7 +61,7 @@ func (app *Application) CreatePostHandler(responseW http.ResponseWriter, request
 	ctx := request.Context()
 
 	// Attempt to create a new post in the database
-	if err := app.Models.Posts.Create(
+	if newPost, err := app.Models.Posts.Create(
 		ctx,
 		&models.Post{
 			UserID:  payload.UserID,  // Assign UserID from payload
@@ -77,9 +77,7 @@ func (app *Application) CreatePostHandler(responseW http.ResponseWriter, request
 	} else {
 
 		// If successful, respond with a success message
-		responseData := app.NewHTTPResponse(http.StatusCreated, "Post successfully created")
-
-		app.WriteJSON(responseW, http.StatusCreated, responseData); return
+		app.StatusCreated(responseW, request, newPost)
 
 	}
 }
@@ -229,13 +227,15 @@ func (app *Application) UpdatePostHandler(responseW http.ResponseWriter, request
 	log.Println("Existing post after update: ", existingPost)
 
 	// Attempt to update post in the database
-	if err := app.Models.Posts.Update(ctx, existingPost); err != nil {
+	updatedPost, err := app.Models.Posts.Update(ctx, existingPost)
+
+	if err != nil {
 
 		app.StatusInternalServerError(responseW, request, err); return
 
 	}
 
-	app.StatusUpdated(responseW, request, "Post successfully updated")
+	app.StatusUpdated(responseW, request, updatedPost)
 
 }
 

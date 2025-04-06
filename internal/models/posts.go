@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"log"
+	"time"
 )
 
 
@@ -38,21 +38,20 @@ func NewPostModel(db *sql.DB) PostModel {
 
 
 // Create inserts a new post into the database
-func (postmodel PostModel) Create(ctx context.Context, post *Post) error {
+func (postmodel PostModel) Create(ctx context.Context, post *Post) (*Post, error) {
+
+	now := time.Now().Format("2006-01-02 15:04:05") // MySQL DATETIME format
+
 	query := `
 		INSERT INTO posts (user_id, title, content, tags, created_at, updated_at)
-		VALUES (?, ?, ?, ?, NOW(), NOW())
+		VALUES (?, ?, ?, ?, ?, ?)
 	`
-
-	log.Println("Before conversion:", *post)
 
 	// Convert `[]string` to JSON string
 	tagsJSON, err := json.Marshal(post.Tags)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	log.Println("Converted Tags JSON:", string(tagsJSON))
 
 	result, err := postmodel.db.ExecContext(
 		ctx,
@@ -61,23 +60,30 @@ func (postmodel PostModel) Create(ctx context.Context, post *Post) error {
 		post.Title,
 		post.Content,
 		tagsJSON,
+		now,
+		now,
 	)
 
 	if err != nil {
-		return err
+
+		return nil, err
+
 	}
 
 	// Retrieve the last inserted ID
 	post.ID, err = result.LastInsertId()
+
 	if err != nil {
-		return err
+
+		return nil, err
+
 	}
 
 	// Set created_at and updated_at manually if needed
-	post.CreatedAt = "NOW()"
-	post.UpdatedAt = "NOW()"
+	post.CreatedAt = now
+	post.UpdatedAt = now
 
-	return nil
+	return post, nil
 }
 
 
@@ -130,14 +136,19 @@ func (postmodel PostModel) GetAll(ctx context.Context) ([]Post, error) {
 
 		// Return error if scanning fails
 		if err != nil {
+
 			return nil, err
+			
 		}
 
 		// Convert the JSON string of current post tags
 		// into a slice of strings then update post.Tags
 		err = json.Unmarshal([]byte(tagsJSON), &post.Tags)
+
 		if err != nil {
+
 			return nil, err
+
 		}
 
 		// Append the parsed post to the list
@@ -195,10 +206,10 @@ func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error)
 
 
 // Update modifies an existing post
-func (postmodel PostModel) Update(ctx context.Context, post *Post) error {
+func (postmodel PostModel) Update(ctx context.Context, post *Post) (*Post, error) {
 	query := `
 		UPDATE posts 
-		SET title = ?, content = ?, tags = ?, updated_at = NOW() 
+		SET user_id = ?, title = ?, content = ?, tags = ?, updated_at = NOW() 
 		WHERE id = ? 
 		LIMIT 1
 	`
@@ -206,19 +217,23 @@ func (postmodel PostModel) Update(ctx context.Context, post *Post) error {
 	// Convert `[]string` to JSON string
 	tagsJSON, err := json.Marshal(post.Tags)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	_, err = postmodel.db.ExecContext(
 		ctx,
 		query,
+		post.UserID,
 		post.Title,
 		post.Content,
 		tagsJSON,
 		post.ID,
 	)
 
-	return err
+	// Set created_at and updated_at manually if needed
+	post.UpdatedAt = time.Now().Format("2006-01-02 15:04:05") // MySQL DATETIME format
+
+	return post, err
 }
 
 

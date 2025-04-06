@@ -16,7 +16,7 @@ type CreateUserPayload struct {
 	LastName string  `json:"last_name" validate:"required,max=30"`
 	Email string      `json:"email" validate:"required,email,max=100"`
 	Username string   `json:"username" validate:"required,max=30"`
-	Password string   `json:"password" validate:"required,min=8"`
+	Password string   `json:"password" validate:"required,min=4"`
 }
 
 type UpdateUserPayload struct {
@@ -24,7 +24,7 @@ type UpdateUserPayload struct {
 	LastName string  `json:"last_name" validate:"omitempty,max=30"`
 	Email string      `json:"email" validate:"omitempty,email,max=100"`
 	Username string   `json:"username" validate:"omitempty,max=30"`
-	Password string   `json:"password" validate:"omitempty,min=8"`
+	Password string   `json:"password" validate:"omitempty,min=4"`
 }
 
 
@@ -43,6 +43,8 @@ func (app *Application) CreateUserHandler(responseW http.ResponseWriter, request
 
 	}
 
+	log.Println(payload)
+
 	// Validate payload
 	if err := Validate.Struct(payload); err != nil {
 
@@ -54,7 +56,7 @@ func (app *Application) CreateUserHandler(responseW http.ResponseWriter, request
 	ctx := request.Context()
 
 	// Attempt to create a new user in the database
-	if err := app.Models.Users.Create(
+	if newUser, err := app.Models.Users.Create(
 		ctx,
 		&models.User{
 			FirstName:  payload.FirstName,
@@ -71,7 +73,7 @@ func (app *Application) CreateUserHandler(responseW http.ResponseWriter, request
 	} else {
 
 		// If successful, respond with a success message
-		app.StatusCreated(responseW, request, "User successfully created")
+		app.StatusCreated(responseW, request, newUser)
 
 	}
 }
@@ -114,7 +116,7 @@ func (app *Application) FetchUserHandler(responseW http.ResponseWriter, request 
 
 	if err != nil {
 
-		app.StatusBadRequest(responseW, request, err)
+		app.StatusBadRequest(responseW, request, err); return
 
 	}
 
@@ -129,11 +131,11 @@ func (app *Application) FetchUserHandler(responseW http.ResponseWriter, request 
 
 	if data == nil {
 
-		app.StatusNotFound(responseW, request, errors.New("user not found"))
+		app.StatusNotFound(responseW, request, errors.New("user not found")); return
 
 	} else if err != nil {
 
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
 
 	} else {
 
@@ -158,7 +160,7 @@ func (app *Application) UpdateUserHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		app.StatusBadRequest(responseW, request, err)
+		app.StatusBadRequest(responseW, request, err); return
 
 	}
 
@@ -170,7 +172,7 @@ func (app *Application) UpdateUserHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		app.StatusNotFound(responseW, request, errors.New("user not found"))
+		app.StatusNotFound(responseW, request, errors.New("user not found")); return
 
 	}
 
@@ -182,7 +184,7 @@ func (app *Application) UpdateUserHandler(responseW http.ResponseWriter, request
 	// Read & parse JSON request body into payload
 	if err := app.ReadJSON(responseW, request, &payload); err != nil {
 
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
 
 	}
 
@@ -191,7 +193,7 @@ func (app *Application) UpdateUserHandler(responseW http.ResponseWriter, request
 	// Validate payload
 	if err := Validate.Struct(payload); err != nil {
 
-		app.StatusBadRequest(responseW, request, err)
+		app.StatusBadRequest(responseW, request, err); return
 
 	}
 
@@ -218,13 +220,15 @@ func (app *Application) UpdateUserHandler(responseW http.ResponseWriter, request
 	}
 
 	// Attempt to update user in the database
-	if err := app.Models.Users.Update(ctx, existingUser); err != nil {
+	updatedUser, err := app.Models.Users.Update(ctx, existingUser)
 
-		app.StatusInternalServerError(responseW, request, err)
+	if err != nil {
+
+		app.StatusInternalServerError(responseW, request, err); return
 
 	}
 
-	app.StatusUpdated(responseW, request, "user successfully updated")
+	app.StatusUpdated(responseW, request, updatedUser)
 
 }
 
@@ -243,7 +247,7 @@ func (app *Application) DeleteUserHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		app.StatusBadRequest(responseW, request, err)
+		app.StatusBadRequest(responseW, request, err); return
 
 	}
 
@@ -255,7 +259,7 @@ func (app *Application) DeleteUserHandler(responseW http.ResponseWriter, request
 
 	if err != nil {
 
-		app.StatusInternalServerError(responseW, request, err)
+		app.StatusInternalServerError(responseW, request, err); return
 
 	}
 
