@@ -19,6 +19,7 @@ type Model[ModelType any] interface {
 type Models struct {
 	Users UserModel
 	Posts PostModel
+	Comments CommentModel
 }
 
 // NewModels initializes the models with a shared DB connection
@@ -26,5 +27,6 @@ func NewModels(db *sql.DB) Models {
 	return Models{
 		Users: NewUserModel(db),
 		Posts: NewPostModel(db),
+		Comments: NewCommentModel(db),
 	}
 }

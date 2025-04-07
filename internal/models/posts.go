@@ -19,6 +19,7 @@ type Post struct {
 	Tags      []string `json:"tags"`
 	CreatedAt string   `json:"created_at"`
 	UpdatedAt string   `json:"updated_at"`
+	Comments  []Comment
 }
 
 // PostModel implements the Model interface for Post

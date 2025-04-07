@@ -37,7 +37,11 @@ func SetUpRouter(app *app.Application) *chi.Mux {
 			r.Delete("/{id}/delete", app.DeleteUserHandler)
 		})
 
-
+		r.Route("/comments", func (r chi.Router) {
+			r.Post("/create", app.CreateCommentHandler)
+			r.Patch("/{id}/update", app.UpdateCommentHandler)
+			r.Delete("/{id}/delete", app.DeleteCommentHandler)
+		})
 	})
 
 	return r
