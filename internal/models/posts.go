@@ -4,22 +4,23 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"time"
 )
-
 
 // TYPES
 
 // Post structure
 type Post struct {
-	ID        int64    `json:"id"`
-	UserID    int64    `json:"user_id"`
-	Title     string   `json:"title"`
-	Content   string   `json:"content"`
-	Tags      []string `json:"tags"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
-	Comments  []Comment
+	ID        int64    	`json:"id"`
+	UserID    int64    	`json:"user_id"`
+	Title     string   	`json:"title"`
+	Content   string   	`json:"content"`
+	Tags      []string 	`json:"tags"`
+	CreatedAt string   	`json:"created_at"`
+	UpdatedAt string   	`json:"updated_at"`
+	Author    User     	`json:"author"`  // Nested struct for author details
+	Comments  []Comment	`json:"comments"`
 }
 
 // PostModel implements the Model interface for Post
@@ -104,14 +105,17 @@ func (postmodel PostModel) Create(ctx context.Context, post *Post) (*Post, error
 func (postmodel PostModel) GetAll(ctx context.Context) ([]Post, error) {
 	query := `
 		SELECT 
-		id, user_id, title, content, tags, created_at, updated_at 
-		FROM posts
+			id, user_id, title, content, tags, created_at, updated_at 
+		FROM 
+			posts
 	`
 	rows, err := postmodel.db.QueryContext(ctx, query)
 
 	// Return error if query execution fails
 	if err != nil {
+
 		return nil, err
+
 	}
 	// Ensure rows are closed after function execution to prevent resource leaks
 	defer rows.Close()
@@ -166,39 +170,127 @@ func (postmodel PostModel) GetAll(ctx context.Context) ([]Post, error) {
 
 // GetByID retrieves a post by its ID
 func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error) {
+	// Fetch Post + User Info
 	query := `
 		SELECT 
-		id, user_id, title, content, tags, created_at, updated_at FROM posts 
-		WHERE id = ? 
+			p.id, p.user_id, p.title, p.content, p.tags, p.created_at, p.updated_at,
+			u.first_name, u.last_name, u.username
+		FROM 
+			posts p
+		JOIN 
+			users u ON u.id = p.user_id
+		WHERE 
+			p.id = ?
 		LIMIT 1
 	`
 	row := postmodel.db.QueryRowContext(ctx, query, id)
 
-	var post Post       // For parsing post result into
-	var tagsJSON string // Holds JSON string representation of tags
-	
-	err := row.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &tagsJSON, &post.CreatedAt, &post.UpdatedAt)
+	var post Post 		// Post place holder
+	var author User 	// Author placeholder
+	var tagsJSON string // Post tags in JSON placeholder 
 
-	if err == sql.ErrNoRows {
+	err := row.Scan(
+		&post.ID, 
+		&post.UserID, 
+		&post.Title, 
+		&post.Content, 
+		&tagsJSON, 
+		&post.CreatedAt, 
+		&post.UpdatedAt,
+		&author.FirstName,
+		&author.LastName,
+		&author.Username,
+	)
 
-		return nil, nil // Return nil instead of an error if no post is found
+	log.Println("Post: ", post)
+	log.Println("Author: ", author)
 
-	} else if err != nil {
+	if err != nil {
+		switch err {
 
-		return nil, err // If error occured
+			case sql.ErrNoRows: 	// If post not found
 
+				return nil, nil
+
+			default: 				// Other error
+
+				return nil, err
+
+		}
 	}
 
-	// Convert the JSON string of post tags
-	// into a slice of strings then update post.Tags
+	// Setting post author
+	post.Author = author
+	// Converting and parsing post tags in JSON to slice
 	err = json.Unmarshal([]byte(tagsJSON), &post.Tags)
-	
+
+
 	if err != nil {
 
 		return nil, err
 
 	}
 
+	// Fetch Comments for Post
+	commentsQuery := `
+		SELECT 
+			id, user_id, post_id, parent_id, content, created_at, updated_at
+		FROM 
+			comments
+		WHERE 
+			post_id = ?
+		ORDER BY 
+			created_at 
+		ASC
+	`
+
+	// Querying the DB
+	rows, err := postmodel.db.QueryContext(ctx, commentsQuery, post.ID)
+
+	if err != nil {
+
+		return nil, err
+
+	}
+
+	// Preventing further enumeration 
+	defer rows.Close()
+
+	//  Comment slice to hold comment structs
+	var comments []Comment
+
+	// Looping through comments
+	for rows.Next() {
+
+		// Current comment
+		var comment Comment
+
+		err := rows.Scan(
+			&comment.ID,
+			&comment.UserID,
+			&comment.PostID,
+			&comment.ParentID,
+			&comment.Content,
+			&comment.CreatedAt,
+			&comment.UpdatedAt,
+		)
+
+		if err != nil {
+
+			return nil, err
+
+		}
+
+		// Append comments to comment slice
+		comments = append(comments, comment)
+	}
+
+	log.Println("Comments: ", comments)
+
+	// Setting post comments
+	post.Comments = comments
+
+	// Finally return post
 	return &post, nil
 }
 

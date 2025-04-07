@@ -6,7 +6,11 @@ import (
 )
 
 
-// Model interface defines common CRUD methods for all models
+// Model defines CRUD operations every model should have.
+// This allows us to depend on abstractions instead of concrete structs.
+// Real models (PostModel, UserModel, etc) implement this interface.
+//
+// Makes testing easier & keeps handlers decoupled from DB logic.
 type Model[ModelType any] interface {
 	Create(context.Context, *ModelType) (*ModelType, error)
 	GetAll(context.Context) ([]ModelType, error)

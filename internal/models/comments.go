@@ -10,13 +10,15 @@ import (
 
 // Comment structure
 type Comment struct {
-	ID			int64 `json:"id"`
-	UserID		int64 `json:"user_id"`
-	PostID		int64 `json:"post_id"`
-	ParentID    int64 `json:"parent_id"`
-	Content		string `json:"content"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
+	ID			int64 	`json:"id"`
+	UserID		int64 	`json:"user_id"`
+	PostID		int64 	`json:"post_id"`
+	ParentID    int64 	`json:"parent_id"`
+	Content		string 	`json:"content"`
+	CreatedAt 	string 	`json:"created_at"`
+	UpdatedAt 	string  `json:"updated_at"`
+	Commenter   User   	`json:"commenter"`  // Nested struct for commenter details
+	Replies  []Comment  `json:"replies"`
 }
 
 // CommentModel implements the Model interface for Comment
@@ -86,13 +88,19 @@ func (commentmodel CommentModel) Create(ctx context.Context, comment *Comment) (
 func (commentmodel CommentModel) GetByID(ctx context.Context, id int64) (*Comment, error) {
 	query := `
 		SELECT 
-		id, user_id, title, content, tags, created_at, updated_at 
-		FROM comments 
-		WHERE id = ? 
+			c.id, c.user_id, c.title, c.content, c.tags, c.created_at, c.updated_at,
+			u.first_name, u.last_name, u.username 
+		FROM 
+			comments c
+		JOIN 
+			users u ON u.id = c.user_id
+		WHERE 
+			c.id = ? 
 		LIMIT 1
 	`
 
-	comment := Comment{}
+	comment := Comment{} 	// Comment placeholder
+	commenter := User{}		// Commenter placeholder
 	row := commentmodel.db.QueryRowContext(ctx, query, id)
 
 	err := row.Scan(
@@ -103,6 +111,9 @@ func (commentmodel CommentModel) GetByID(ctx context.Context, id int64) (*Commen
 		&comment.Content,
 		&comment.CreatedAt,
 		&comment.UpdatedAt,
+		&commenter.FirstName,
+		&commenter.LastName,
+		&commenter.Username,
 	)
 
 	if err == sql.ErrNoRows {
@@ -115,6 +126,68 @@ func (commentmodel CommentModel) GetByID(ctx context.Context, id int64) (*Commen
 
 	}
 
+	// Setting commenter
+	comment.Commenter = commenter
+
+	repliesQuery := `
+		SELECT 
+			c.id, c.user_id, c.title, c.content, c.tags, c.created_at, c.updated_at,
+			u.first_name, u.last_name, u.username 
+		FROM 
+			comments c
+		JOIN 
+			users u ON u.id = c.user_id
+		WHERE 
+			c.parent_id = ? 
+		ORDER BY 
+			created_at 
+		ASC
+	`
+
+	// Querying the DB
+	rows, err := commentmodel.db.QueryContext(ctx, repliesQuery, comment.ParentID)
+
+	if err != nil {
+
+		return nil, err
+
+	}
+
+	// Preventing further enumeration 
+	defer rows.Close()
+
+	//  Comment slice to hold reply comments structs
+	var replies []Comment
+
+	// Looping through comments
+	for rows.Next() {
+
+		// Current comment
+		var reply Comment
+
+		err := rows.Scan(
+			&reply.ID,
+			&reply.UserID,
+			&reply.PostID,
+			&reply.ParentID,
+			&reply.Content,
+			&reply.CreatedAt,
+			&reply.UpdatedAt,
+		)
+
+		if err != nil {
+
+			return nil, err
+
+		}
+
+		// Append reply to replies slice
+		replies = append(replies, reply)
+	}
+	
+	// Setting comment replies
+	comment.Replies = replies
+		
 	return &comment, nil
 }
 
