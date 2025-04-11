@@ -5,7 +5,8 @@ export $(shell powershell -Command "Get-Content $(ENV_FILE) | ForEach-Object { (
 
 # Variables
 MIGRATIONS_PATH := "./internal/db/migrations"
-GOOSE_BIN := $(shell where goose) 
+GOOSE_BIN := $(shell where goose)
+# DBRIVER and DBURL variables are coming from the env file
 # Why Use GOOSE_BIN Instead of Just goose?
 # Works even if goose is installed in a non-standard location
 # If multiple versions of goose exist, this avoids conflicts by using the one found in your system’s PATH.
@@ -15,7 +16,6 @@ GOOSE_BIN := $(shell where goose)
 .PHONY: air
 air:
 	@air
-	# Run using - make air
 
 # Create a new migration file
 # Run using - make migrate-create name=my_migration
@@ -44,3 +44,10 @@ migrate-down:
 migrate-status:
 	@echo "Fetching migration status..."
 	@$(GOOSE_BIN) -dir $(MIGRATIONS_PATH) $(DBDRIVER) "$(DBURL)" status
+
+# Curl request
+# Run using - make curl-get route=http://localhost:8080/api/v1/users
+.PHONY: 
+curl-get:
+	@echo "Making curl request..."
+	@curl -X GET "$(route)"

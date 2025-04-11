@@ -101,13 +101,14 @@ func (commentmodel CommentModel) GetByID(ctx context.Context, id int64) (*Commen
 
 	comment := Comment{} 	// Comment placeholder
 	commenter := User{}		// Commenter placeholder
+	var parentID sql.NullInt64 	// To handle NULL parent_id
 	row := commentmodel.db.QueryRowContext(ctx, query, id)
 
 	err := row.Scan(
 		&comment.ID, 
 		&comment.UserID, 
 		&comment.PostID,
-		&comment.ParentID,
+		&parentID,
 		&comment.Content,
 		&comment.CreatedAt,
 		&comment.UpdatedAt,
@@ -123,6 +124,13 @@ func (commentmodel CommentModel) GetByID(ctx context.Context, id int64) (*Commen
 	} else if err != nil {
 
 		return nil, err // If error occured
+
+	}
+
+	// If parent_id is not null, assign value
+	if parentID.Valid {
+
+		comment.ParentID = parentID.Int64
 
 	}
 
@@ -162,14 +170,14 @@ func (commentmodel CommentModel) GetByID(ctx context.Context, id int64) (*Commen
 	// Looping through comments
 	for rows.Next() {
 
-		// Current comment
-		var reply Comment
+		var reply Comment					// Current comment
+		var replyParentID sql.NullInt64 	// To handle NULL parent_id
 
 		err := rows.Scan(
 			&reply.ID,
 			&reply.UserID,
 			&reply.PostID,
-			&reply.ParentID,
+			&replyParentID, // Scan into sql.NullInt64
 			&reply.Content,
 			&reply.CreatedAt,
 			&reply.UpdatedAt,
@@ -179,6 +187,13 @@ func (commentmodel CommentModel) GetByID(ctx context.Context, id int64) (*Commen
 
 			return nil, err
 
+		} else {
+			// If parent_id is not null, assign value
+			if replyParentID.Valid {
+
+				reply.ParentID = parentID.Int64
+
+			}
 		}
 
 		// Append reply to replies slice

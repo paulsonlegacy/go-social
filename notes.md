@@ -54,6 +54,10 @@ This permanently adds $(go env GOPATH)\bin to the user's PATH.
 
 - Install make on Windows using chocolatey - choco install make
 
+- Note that a migration file can only work/migrate successfully with a SINGLE up and down SQL query
+
 - Struct validation was done using "github.com/go-playground/validator/v10" library
 
 - install using go get github.com/go-playground/validator/v10
+
+- Handle null fields from the DB in Go by using pointer types (e.g., *int64, *string) or sql.NullXXX types (Where XXX is the actual data type) so you can safely scan nullable columns without errors.
