@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"errors"
+	"database/sql"
 	"github.com/go-chi/chi/v5"
 	"github.com/paulsonlegacy/go-social/internal/models"
 )
@@ -13,8 +14,8 @@ import (
 
 type CreateCommentPayload struct {
 	UserID    int64    `json:"user_id" validate:"required"`
-	PostID    int64    `json:"post_id" validate:"required"`
-	ParentID  int64  `json:"parent_id" validate:"omitempty"`
+	PostID    sql.NullInt64    `json:"post_id" validate:"omitempty"`
+	ParentID  sql.NullInt64  `json:"parent_id" validate:"omitempty"`
 	Content   string   `json:"content" validate:"required,max=10000"`
 }
 

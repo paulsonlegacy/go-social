@@ -171,13 +171,15 @@ func (postmodel PostModel) GetAll(ctx context.Context) ([]Post, error) {
 // GetByID retrieves a post by its ID
 func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error) {
 	// Fetch Post + User Info
+	// Used JOIN hence posts with a non-existent users will not be fetched
+	// Use LEFT JOIN instead if intend to fetch ophan posts
 	query := `
 		SELECT 
 			p.id, p.user_id, p.title, p.content, p.tags, p.created_at, p.updated_at,
 			u.first_name, u.last_name, u.username
 		FROM 
 			posts p
-		JOIN 
+		JOIN
 			users u ON u.id = p.user_id
 		WHERE 
 			p.id = ?
@@ -210,6 +212,8 @@ func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error)
 
 			case sql.ErrNoRows: 	// If post not found
 
+				log.Println("No row found")
+
 				return nil, nil
 
 			default: 				// Other error
@@ -226,6 +230,8 @@ func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error)
 
 
 	if err != nil {
+
+		log.Println("Unmarshal error occured")
 
 		return nil, err
 
@@ -249,6 +255,8 @@ func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error)
 
 	if err != nil {
 
+		log.Println("Error occured while fetching comments")
+
 		return nil, err
 
 	}
@@ -261,15 +269,14 @@ func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error)
 
 	// Looping through comments
 	for rows.Next() {
-
-		// Current comment
-		var comment Comment
+		var comment Comment 		// Single comment placeholder
+		var parentID sql.NullInt64 	// To handle NULL parent_id
 
 		err := rows.Scan(
 			&comment.ID,
 			&comment.UserID,
 			&comment.PostID,
-			&comment.ParentID,
+			&parentID,  // Scan into sql.NullInt64
 			&comment.Content,
 			&comment.CreatedAt,
 			&comment.UpdatedAt,
@@ -277,11 +284,12 @@ func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error)
 
 		if err != nil {
 
+			log.Println("Error occured while scanning comment rows: ", err)
+			
 			return nil, err
 
 		}
 
-		// Append comments to comment slice
 		comments = append(comments, comment)
 	}
 

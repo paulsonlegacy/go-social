@@ -10,15 +10,15 @@ import (
 
 // Comment structure
 type Comment struct {
-	ID			int64 	`json:"id"`
-	UserID		int64 	`json:"user_id"`
-	PostID		int64 	`json:"post_id"`
-	ParentID    int64 	`json:"parent_id"`
-	Content		string 	`json:"content"`
-	CreatedAt 	string 	`json:"created_at"`
-	UpdatedAt 	string  `json:"updated_at"`
-	Commenter   User   	`json:"commenter"`  // Nested struct for commenter details
-	Replies  []Comment  `json:"replies"`
+	ID			int64 			`json:"id"`
+	UserID		int64 			`json:"user_id"`
+	PostID		sql.NullInt64 	`json:"post_id"`
+	ParentID    sql.NullInt64 	`json:"parent_id"`
+	Content		string 			`json:"content"`
+	CreatedAt 	string 			`json:"created_at"`
+	UpdatedAt 	string  		`json:"updated_at"`
+	Commenter   User   			`json:"commenter"`  // Nested struct for commenter details
+	Replies  []Comment  		`json:"replies"`
 }
 
 // CommentModel implements the Model interface for Comment
@@ -101,13 +101,14 @@ func (commentmodel CommentModel) GetByID(ctx context.Context, id int64) (*Commen
 
 	comment := Comment{} 	// Comment placeholder
 	commenter := User{}		// Commenter placeholder
+	var parentID sql.NullInt64 	// To handle NULL parent_id
 	row := commentmodel.db.QueryRowContext(ctx, query, id)
 
 	err := row.Scan(
 		&comment.ID, 
 		&comment.UserID, 
 		&comment.PostID,
-		&comment.ParentID,
+		&parentID,
 		&comment.Content,
 		&comment.CreatedAt,
 		&comment.UpdatedAt,
@@ -162,14 +163,14 @@ func (commentmodel CommentModel) GetByID(ctx context.Context, id int64) (*Commen
 	// Looping through comments
 	for rows.Next() {
 
-		// Current comment
-		var reply Comment
+		var reply Comment					// Current comment
+		var replyParentID sql.NullInt64 	// To handle NULL parent_id
 
 		err := rows.Scan(
 			&reply.ID,
 			&reply.UserID,
 			&reply.PostID,
-			&reply.ParentID,
+			&replyParentID, // Scan into sql.NullInt64
 			&reply.Content,
 			&reply.CreatedAt,
 			&reply.UpdatedAt,
