@@ -90,6 +90,10 @@ func main() {
 		Models:  models.NewModels(DB_CONNECTION),
 	}
 
+	// Seed database
+	//log.Println("Seeding the database...")
+	//db.Seed(app.Models);
+
 	// Initializing mux/router
 	appRouter := router.SetUpRouter(app)
 
