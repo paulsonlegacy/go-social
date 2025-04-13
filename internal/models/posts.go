@@ -19,6 +19,7 @@ type Post struct {
 	Tags      []string 	`json:"tags"`
 	CreatedAt string   	`json:"created_at"`
 	UpdatedAt string   	`json:"updated_at"`
+	Version	  int		`json:"version"`
 	Author    User     	`json:"author"`  // Nested struct for author details
 	Comments  []Comment	`json:"comments"`
 }
@@ -175,7 +176,7 @@ func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error)
 	// Use LEFT JOIN instead if intend to fetch ophan posts
 	query := `
 		SELECT 
-			p.id, p.user_id, p.title, p.content, p.tags, p.created_at, p.updated_at,
+			p.id, p.user_id, p.title, p.content, p.tags, p.created_at, p.updated_at, p.version,
 			u.first_name, u.last_name, u.username
 		FROM 
 			posts p
@@ -199,6 +200,7 @@ func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error)
 		&tagsJSON, 
 		&post.CreatedAt, 
 		&post.UpdatedAt,
+		&post.Version,
 		&author.FirstName,
 		&author.LastName,
 		&author.Username,
@@ -309,9 +311,19 @@ func (postmodel PostModel) GetByID(ctx context.Context, id int64) (*Post, error)
 // Update modifies an existing post
 func (postmodel PostModel) Update(ctx context.Context, post *Post) (*Post, error) {
 	query := `
-		UPDATE posts 
-		SET user_id = ?, title = ?, content = ?, tags = ?, updated_at = NOW() 
-		WHERE id = ? 
+		UPDATE 
+			posts 
+		SET 
+			user_id = ?, 
+			title = ?, 
+			content = ?, 
+			tags = ?, 
+			version = version + 1, 
+			updated_at = NOW() 
+		WHERE 
+			id = ? 
+		AND 
+			version = ?
 		LIMIT 1
 	`
 
@@ -329,6 +341,7 @@ func (postmodel PostModel) Update(ctx context.Context, post *Post) (*Post, error
 		post.Content,
 		tagsJSON,
 		post.ID,
+		post.Version,
 	)
 
 	// Set created_at and updated_at manually if needed
